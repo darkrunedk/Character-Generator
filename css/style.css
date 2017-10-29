@@ -11,4 +11,8 @@
 .character-info fieldset, .character-info fieldset legend { border: #000 1px solid; border-radius: 8px; }
 .form-grid { display: grid; }
 .form-grid select, .form-grid input { margin-bottom: 10px; }
+.form-grid button { background: #CCC; border: #000 1px solid; padding: 10px; cursor: pointer; border-radius: 4px; position: relative; z-index: 1; transition: color .2s ease-in-out; }
+.form-grid button:hover { color: #fff; }
+.form-grid button:before { content: ""; position: absolute; top: 100%; left: 0; right: 0; bottom: 0; background: #999; transition: top .2s ease-in-out; z-index: -1; }
+.form-grid button:hover:before { top: 0; }
 .hidden { display: none; }

@@ -2,13 +2,56 @@ function firstLetterUppercase(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-var femaleNames = ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth", "Jennifer", "Maria", "Susan", "Margaret", "Dorothy", "Lisa", "Nancy", "Karen", "Betty", "Helen", "Sandra", "Donna", "Carol", "Ruth", "Sharon", "Michelle", "Laura", "Sarah", "Kimberly", "Deborah"];
-var maleNames = ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel", "Paul", "Mark", "Donald", "George", "Kenneth", "Steven", "Edward", "Brian", "Ronald", "Anthony", "Kevin", "Jason", "Jeff"];
+// Button states
+var buttonStates = {
+  default: function(button) {
+    $(button).text("Generate");
+    $(button).css({
+      "backgroundColor": "#CCC",
+      "borderColor": "#000",
+      "color": "#000"
+    });
+  },
+  click: function(button) {
+    $(button).text("Generating...");
+    $(button).css({
+      "backgroundColor": "#23d160",
+      "borderColor": "#fff",
+      "color": "#fff"
+    });
+  }
+};
+
+// Races
+var races = ["human", "wood elf", "dark elf"];
+
+// Names
+var names = [];
+
+// Create an array for each race
+for (var i = 0; i < races.length; i++) {
+  names[races[i]] = [];
+}
+
+// Human
+names[races[0]]["male"] = ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel", "Paul", "Mark", "Donald", "George", "Kenneth", "Steven", "Edward", "Brian", "Ronald", "Anthony", "Kevin", "Jason", "Jeff"];
+names[races[0]]["female"] = ["Mary", "Patricia", "Linda", "Barbara", "Elizabeth", "Jennifer", "Maria", "Susan", "Margaret", "Dorothy", "Lisa", "Nancy", "Karen", "Betty", "Helen", "Sandra", "Donna", "Carol", "Ruth", "Sharon", "Michelle", "Laura", "Sarah", "Kimberly", "Deborah"];
+
+// Elf
+names[races[1]]["male"] = ["Arathor", "Bragor", "Clendil", "Engaer", "Fargoth", "Galmir", "Nalion", "Thoronor"];
+names[races[1]]["female"] = ["Anrel", "Ardhil", "Cirwedh", "Dothiel", "Elphiron", "Falion", "Galdiir", "Indrel", "Nilioniel"];
+
+// Dark elf
+names[races[2]]["male"] = ["Arvel", "Drovas", "Falas", "Garyn", "Tendris", "Vanel"];
+names[races[2]]["female"] = ["Alvesa", "Dilvene", "Nilvyn", "Ravela", "Teleri", "Varona"];
+
 
 class Character {
   constructor() {
     this.name = "";
     this.gender = "";
+    this.race = "";
+    this.title = "";
     this.strength = 10;
     this.dexterity = 10;
     this.intelligence = 10;
@@ -18,20 +61,17 @@ class Character {
   }
 }
 
-Character.prototype.Generate = function(characterClass, characterGender) {
+Character.prototype.Generate = function(characterClass, characterGender, characterRace) {
   this.gender = firstLetterUppercase(characterGender);
   this.class = firstLetterUppercase(characterClass);
+  this.race = firstLetterUppercase(characterRace);
+
+  // Set the nameTable that should be used
+  var nameTable = names[characterRace];
 
   var random_number = Math.random();
 
-  switch (characterGender) {
-    case "female":
-      this.name = femaleNames[Math.floor(random_number * femaleNames.length)];
-    break;
-    default:
-      this.name = maleNames[Math.floor(random_number * maleNames.length)];
-    break;
-  }
+  this.name = nameTable[characterGender][Math.floor(random_number * nameTable[characterGender].length)];
 
   random_number = Math.random();
 
@@ -39,24 +79,24 @@ Character.prototype.Generate = function(characterClass, characterGender) {
     case "warrior":
       this.strength = 10 + Math.floor(random_number * this.primaryMultiplier);
 
-      this.name += " the " + this.class;
+      this.title = "the " + this.class;
     break;
     case "ranger":
       this.dexterity = 10 + Math.floor(random_number * this.primaryMultiplier);
 
-      this.name += " the " + this.class;
+      this.title = "the " + this.class;
     break;
     case "mage":
       this.intelligence = 10 + Math.floor(random_number * this.primaryMultiplier);
 
-      this.name += " the " + this.class;
+      this.title = "the " + this.class;
     break;
     case "weakling":
       this.primaryMultiplier = 4;
 
       this.strength = 1 + Math.floor(random_number * this.primaryMultiplier);
 
-      this.name += " the " + this.class.substr(0, 4);
+      this.title = "the " + this.class.substr(0, 4);
     break;
     case "boss":
       this.primaryMultiplier = 25;
@@ -65,7 +105,7 @@ Character.prototype.Generate = function(characterClass, characterGender) {
       var bossTitles = ["Powerful", "Crazy"];
       var bossTitle = bossTitles[Math.floor(Math.random() * bossTitles.length)];
 
-      this.name += " the " + bossTitle;
+      this.title = "the " + bossTitle;
 
       switch (bossTitle) {
         case "Crazy":
@@ -86,31 +126,58 @@ Character.prototype.Generate = function(characterClass, characterGender) {
   }
 };
 
-var gen_div = ".character-gen";
-var gen_info = ".character-info";
+var generator = {
+  elements: [".char-class", ".char-gender", ".char-race"],
+  parts: [".character-gen", ".character-info"],
+  info: [".name", ".title", ".gender", ".race", ".class"],
+  stats: [".str", ".dex", ".int"]
+};
+
+$(document).ready(function() {
+  // Populating the race select menu with the races
+  $.each(races, function(k,v) {
+    var k = firstLetterUppercase(v);
+    $(generator.parts[0] + " " + generator.elements[2]).append($("<option>", { value : v }).text(k));
+  });
+});
 
 $(".gen-btn").click(function() {
+  // Change button state (mostly for users with slow devices/connection)
+  buttonStates.click($(this));
+
   // Creating character
   var character = new Character();
 
   // Values used to generate character
-  var char_class = $(gen_div + " .char-class").val();
-  var char_gender = $(gen_div + " .char-gender").val();
+  var values = [];
+  for (var i = 0; i < generator.elements.length; i++) {
+    var value = $(generator.parts[0] + " " + generator.elements[i]).val();
+    values.push(value);
+  }
+  var char_class = values[0];
+  var char_gender = values[1];
+  var char_race = values[2];
 
   // Generate character based on values
-  character.Generate(char_class, char_gender);
+  character.Generate(char_class, char_gender, char_race);
 
   // Info
-  $(".name").html(character.name);
-  $(".gender").html(character.gender);
-  $(".class").html(character.class);
+  $(generator.info[0]).html(character.name);
+  $(generator.info[1]).html(character.title);
+  $(generator.info[2]).html(character.gender);
+  $(generator.info[3]).html(character.race);
+  $(generator.info[4]).html(character.class);
 
   // Stats
-  $(".str").html(character.strength);
-  $(".dex").html(character.dexterity);
-  $(".int").html(character.intelligence);
+  $(generator.stats[0]).html(character.strength);
+  $(generator.stats[1]).html(character.dexterity);
+  $(generator.stats[2]).html(character.intelligence);
+
+  // Set button state to default again
+  buttonStates.default($(this));
 
   // If info is hidden then show it
+  var gen_info = generator.parts[1];
   if ($(gen_info + ":hidden")) {
     $(gen_info).show(300);
   }
